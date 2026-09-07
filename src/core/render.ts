@@ -330,6 +330,7 @@ function renderHtml<N>(rc: RenderCtx<N>, node: TagNode, inst: Instance<N>, out: 
         onCleanup(h.listen(el, evName, (e) => {
           const target = (e as { target: Record<string, unknown> }).target;
           const raw = a.name === "checked" ? target.checked : target.value;
+          rc.ctx.ops = 0;
           batch(() => guard(rc, inst, node.line, () => path.set(numeric ? Number(raw) : raw), undefined));
         }));
         break;
@@ -357,6 +358,7 @@ const queueMicrotaskSafe = (fn: () => void): void => { queueMicrotask(fn); };
 export function runHandler<N>(rc: RenderCtx<N>, inst: Instance<N>, a: Extract<Attr, { k: "event" }>, line: number, e: unknown): void {
   const prev = rc.ctx.dynamic;
   rc.ctx.dynamic = true;
+  rc.ctx.ops = 0; // the operation limit (V-5) is per event turn in the browser
   try {
     if (a.wrap) {
       drive(evalGen(a.handler, inst.scope, rc.ctx), batch).catch((err) => rc.onError(err, { line, doc: inst.doc.id }));

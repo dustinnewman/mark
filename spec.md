@@ -642,7 +642,7 @@ The evaluator implements the expression grammar of section 4 with JavaScript sem
 **V-2** `replace`/`split` accept string patterns only in 0.3; regular expressions are not in the language.
 **V-3** `sort`/`toSorted`/`localeCompare` must use the same collation at build and in the browser: the evaluator uses code-point ordering and the runtime patches `localeCompare` to match. `toLocaleDateString` is fixed to `en-US` unless `config.locale` is set, and the runtime is configured with the same locale.
 **V-4** Non-determinism (`Math.random`, `Date.now`, `new Date()` with no arguments) is allowed only in expressions that are dynamic (I-1) and only in handler or `var` initializer context; the evaluator substitutes `0` / the build timestamp and the island re-runs the initializer on hydration. In a static expression it is E022.
-**V-5** The evaluator halts a page after 10 million operations or 10 s and reports E023 (likely a runaway `for` or recursive `fn`).
+**V-5** The evaluator halts a page after 10 million operations or 10 s and reports E023 (likely a runaway `for` or recursive `fn`). In the browser the operation count restarts at every event handler and binding write, so the limit bounds one turn, not the whole session.
 
 ### 12.3 Output contract
 

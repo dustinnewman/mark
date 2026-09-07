@@ -102,6 +102,11 @@
     "error": "E023"
   },
   {
+    "name": "run-16c operation limit is per event turn, not per session (V-5)",
+    "files": { "site/index.mark": "var n = 0\nfn work() {\n  var s = 0\n  for i in Array.from({length: 600000}) {\n    s += 1\n  }\n  n += 1\n}\n<button id=b onTap={work()}>{n}</button>\n" },
+    "steps": [{ "click": "#b" }, { "click": "#b" }, { "click": "#b" }, { "click": "#b" }, { "click": "#b" }, { "click": "#b" }, { "expect": { "#b": "6" } }]
+  },
+  {
     "name": "run-17 Site index and nav",
     "files": {
       "site/_site.mark": "<Nav />\n<main><slot /></main>\n",
