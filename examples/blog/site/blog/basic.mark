@@ -1,0 +1,10 @@
+prop title = "Basic"
+prop section = "blog"
+prop date = "2026-09-06"
+
+A basic interactive test page.
+
+var n = 0
+<button onTap={n += 1}>{n}</button>
+
+## $\theta$ and prose with $x^{ {n} }$ math

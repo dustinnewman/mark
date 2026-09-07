@@ -1,0 +1,8 @@
+prop title = "Home"
+prop order = 1
+
+# Welcome
+
+This site is written in **Mark**. Static pages like this one ship no JavaScript.
+
+\for the record, lines starting with keywords are code unless escaped.

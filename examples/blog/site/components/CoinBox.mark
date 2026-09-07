@@ -1,0 +1,3 @@
+prop heads = true
+prop onHeadsChange = {}
+<button class="coin" onTap={heads = !heads}>{heads ? "H" : "T"}</button>

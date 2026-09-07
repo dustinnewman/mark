@@ -1,0 +1,9 @@
+prop title = "Blog"
+prop order = 2
+
+# Posts
+
+for p in Site.under("/blog").filter(p => p.date).sort((a,b) => b.date.localeCompare(a.date)) key p.path {
+## [{p.title}]({p.path})
+<small>{p.date}</small> — {p.excerpt}
+}

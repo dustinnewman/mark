@@ -1,0 +1,39 @@
+{
+  "name": "mark-lang",
+  "version": "0.1.0",
+  "description": "Mark: a Markdown-flavored language for interactive websites",
+  "type": "module",
+  "bin": {
+    "mark": "bin/mark.js"
+  },
+  "scripts": {
+    "test": "node --disable-warning=ExperimentalWarning tests/runner.ts",
+    "runtime": "node --disable-warning=ExperimentalWarning scripts/bundle-runtime.ts",
+    "bundle": "node --disable-warning=ExperimentalWarning scripts/bundle-cli.ts",
+    "binary": "bash scripts/build-binary.sh",
+    "typecheck": "tsc --noEmit",
+    "prepare": "node --disable-warning=ExperimentalWarning scripts/bundle-runtime.ts"
+  },
+  "dependencies": {
+    "katex": "^0.16.11"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/katex": "^0.16.7",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.24.0",
+    "jsdom": "^25.0.0",
+    "postject": "^1.0.0-alpha.6",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=22.6"
+  },
+  "files": [
+    "bin",
+    "src",
+    "runtime",
+    "README.md",
+    "spec.md"
+  ]
+}

@@ -1,0 +1,7 @@
+fn current(p) = Page.path == p.path || Page.path.startsWith(p.path + "/")
+<nav>
+<a href="/" class="brand">My Blog</a>
+for p in Site.nav {
+<a href={p.path} class="current" if current(p)>{p.title}</a>
+}
+</nav>

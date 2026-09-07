@@ -1,0 +1,251 @@
+[
+  {
+    "name": "run-01 var + interpolation + handler",
+    "files": { "site/index.mark": "var n = 0\n<button id=b onTap={n += 1}>{n}</button>\n" },
+    "steps": [{ "expect": { "#b": "0" } }, { "click": "#b" }, { "expect": { "#b": "1" } }, { "click": "#b" }, { "expect": { "#b": "2" } }]
+  },
+  {
+    "name": "run-02 let recomputes lazily",
+    "files": { "site/index.mark": "var a = 2\nlet sq = a * a\n<p id=p>{sq}</p>\n<button id=b onTap={a += 1} />\n" },
+    "steps": [{ "expect": { "#p": "4" } }, { "click": "#b" }, { "expect": { "#p": "9" } }, { "get": { "sq": 9 } }]
+  },
+  {
+    "name": "run-03 if flips and unmounts state",
+    "files": { "site/index.mark": "var on = false\nvar clicks = 0\n<button id=t onTap={on = !on} />\nif on {\nvar inner = 0\n<button id=i onTap={inner += 1}>{inner}</button>\n}\n" },
+    "steps": [
+      { "expect": { "#i": null } }, { "click": "#t" }, { "expect": { "#i": "0" } }, { "click": "#i" }, { "click": "#i" }, { "expect": { "#i": "2" } },
+      { "click": "#t" }, { "expect": { "#i": null } }, { "click": "#t" }, { "expect": { "#i": "0" } }
+    ]
+  },
+  {
+    "name": "run-04 for with deep reactivity, no loop re-run",
+    "files": { "site/index.mark": "var xs = [{v:1},{v:2}]\n<ul>\nfor x in xs {\n<li class=row onTap={x.v += 10}>{x.v}</li>\n}\n</ul>\n<button id=add onTap={xs.push({v:3})} />\n" },
+    "steps": [
+      { "expectMismatches": 0 },
+      { "expect": { "ul": "<li class=\"row\">1</li><li class=\"row\">2</li>" } },
+      { "mark": ".row", "nth": 0, "as": "first" }, { "mark": ".row", "nth": 1, "as": "second" },
+      { "click": ".row", "nth": 0 }, { "expectText": { ".row": ["11", "2"] } },
+      { "same": ".row", "nth": 1, "as": "second" }, { "same": ".row", "nth": 0, "as": "first" },
+      { "click": "#add" }, { "expectText": { ".row": ["11", "2", "3"] } },
+      { "same": ".row", "nth": 0, "as": "first" }, { "same": ".row", "nth": 1, "as": "second" }
+    ]
+  },
+  {
+    "name": "run-05 for key preserves state on reorder",
+    "files": { "site/index.mark": "var xs = [{id:1},{id:2}]\nfor x in xs key x.id {\nvar c = 0\n<button class=k onTap={c += 1}>{x.id}:{c}</button>\n}\n<button id=rev onTap={xs.reverse()} />\n" },
+    "steps": [{ "click": ".k", "nth": 0 }, { "expectText": { ".k": ["1:1", "2:0"] } }, { "click": "#rev" }, { "expectText": { ".k": ["2:0", "1:1"] } }]
+  },
+  {
+    "name": "run-06 two-way bind through component",
+    "files": { "site/components/Num.mark": "prop value = 0\nprop onValueChange = {}\n<button class=inc onTap={value += 1}>{value}</button>\n", "site/index.mark": "var t = 5\n<Num value=$t />\n<p id=p>{t}</p>\n" },
+    "steps": [{ "click": ".inc" }, { "expect": { ".inc": "6", "#p": "6" } }]
+  },
+  {
+    "name": "run-07 same component, seeded and uncontrolled (T-17)",
+    "files": { "site/components/Num.mark": "prop value = 0\nprop onValueChange = {}\n<button class=inc onTap={value += 1}>{value}</button>\n", "site/index.mark": "var s = 5\n<Num value={s} />\n<Num />\n<button id=r onTap={s = 100} />\n" },
+    "steps": [
+      { "expectText": { ".inc": ["5", "0"] } },
+      { "click": ".inc", "nth": 0 }, { "click": ".inc", "nth": 0 }, { "expectText": { ".inc": ["7", "0"] } },
+      { "click": ".inc", "nth": 1 }, { "expectText": { ".inc": ["7", "1"] } },
+      { "click": "#r" }, { "expectText": { ".inc": ["100", "1"] } },
+      { "click": ".inc", "nth": 0 }, { "expectText": { ".inc": ["101", "1"] } }, { "get": { "s": 100 } }
+    ]
+  },
+  {
+    "name": "run-08 bind shorthand name through loop item",
+    "files": { "site/components/CoinBox.mark": "prop heads = true\nprop onHeadsChange = {}\n<button class=coin onTap={heads = !heads}>{heads ? \"H\" : \"T\"}</button>\n", "site/index.mark": "var coins = [{heads:true},{heads:true}]\nfor coin in coins {\n<CoinBox $coin.heads />\n}\n<p id=n>{coins.filter(c => c.heads).length}</p>\n" },
+    "steps": [{ "expect": { "#n": "2" } }, { "click": ".coin", "nth": 1 }, { "expectText": { ".coin": ["H", "T"] } }, { "expect": { "#n": "1" } }]
+  },
+  {
+    "name": "run-09 HTML input binding with number coercion",
+    "files": { "site/index.mark": "var x = 0.5\n<input id=r type=range min=0 max=1 step=0.01 value=$x />\n<p id=p>{x * 2}</p>\n" },
+    "steps": [{ "expect": { "#p": "1" } }, { "input": "#r", "value": "0.25" }, { "expect": { "#p": "0.5" } }, { "get": { "x": 0.25 } }]
+  },
+  {
+    "name": "run-10 conditional class merging",
+    "files": { "site/index.mark": "var cur = true\n<a id=a class=\"link\" class=\"current\" if cur>x</a>\n<button id=t onTap={cur = !cur} />\n" },
+    "steps": [{ "expectAttr": { "#a": { "class": "link current" } } }, { "click": "#t" }, { "expectAttr": { "#a": { "class": "link" } } }]
+  },
+  {
+    "name": "run-11 event pass-through receives event (C-16)",
+    "files": { "site/index.mark": "var k = \"\"\nfn onKey(e) { k = e.key }\n<input id=i onKeydown={onKey} />\n<p id=p>{k}</p>\n" },
+    "steps": [{ "keydown": "#i", "key": "a" }, { "expect": { "#p": "a" } }]
+  },
+  {
+    "name": "run-12 slots evaluate in caller scope",
+    "files": { "site/components/Card.mark": "prop title\n<section><h2>{title}</h2><slot /></section>\n", "site/index.mark": "var n = 3\n<Card title=\"T\">\nInside {n}\n</Card>\n" },
+    "steps": [{ "expect": { "section": "<h2>T</h2><p>Inside 3</p>" } }]
+  },
+  {
+    "name": "run-13 math renders and re-renders",
+    "files": { "site/index.mark": "var a = 2\n<p id=m>$x^{ {a} }$</p>\n<button id=b onTap={a += 1} />\n" },
+    "steps": [{ "expectMismatches": 0 }, { "expectCount": { "#m .katex": 1 } }, { "expectText": { "#m annotation": ["x^{ 2 }"] } }, { "click": "#b" }, { "expectText": { "#m annotation": ["x^{ 3 }"] } }]
+  },
+  {
+    "name": "run-14 math with literal braces unaffected",
+    "files": { "site/index.mark": "var z = 0\n<p id=m>$\\frac{a}{b}$ {z}</p>\n" },
+    "steps": [{ "expectText": { ".katex annotation": ["\\frac{a}{b}"] } }, { "expectErrors": [] }]
+  },
+  {
+    "name": "run-15 handler batching",
+    "files": { "site/index.mark": "var a = 0\nvar b = 0\n<p id=p>{a + b}</p>\n<button id=t onTap={a += 1; b += 1} />\n" },
+    "steps": [{ "observe": "#p" }, { "click": "#t" }, { "expect": { "#p": "2" } }, { "expectMutations": 1 }]
+  },
+  {
+    "name": "run-16 cycle error at runtime",
+    "files": { "site/index.mark": "var n = 0\nfn f() = n > 0 ? g() : 0\nfn g() = f()\nlet b = f()\n<p id=p>{b}</p>\n<button id=t onTap={n = 1} />\n" },
+    "steps": [{ "expect": { "#p": "0" } }, { "click": "#t" }, { "expectErrors": ["RT03"] }]
+  },
+  {
+    "name": "run-16b compile-time runaway is E023",
+    "files": { "site/index.mark": "var a = 1\nfn f() = g()\nfn g() = f()\nlet b = f()\n<p>{b}</p>\n" },
+    "error": "E023"
+  },
+  {
+    "name": "run-17 Site index and nav",
+    "files": {
+      "site/_site.mark": "<Nav />\n<main><slot /></main>\n",
+      "site/components/Nav.mark": "fn cur(p) = Page.path == p.path || Page.path.startsWith(p.path + \"/\")\n<nav>\nfor p in Site.nav key p.path {\n<a href={p.path} class=\"current\" if cur(p)>{p.title}</a>\n}\n</nav>\n",
+      "site/index.mark": "prop title = \"Home\"\nprop order = 1\n# Home\n",
+      "site/blog/index.mark": "prop title = \"Blog\"\nprop order = 2\n# Posts\n",
+      "site/blog/one.mark": "prop title = \"One\"\nprop section = \"blog\"\nprop date = \"2026-01-02\"\nFirst para.\n\nSecond.\n",
+      "site/about.mark": "# About\n"
+    },
+    "steps": [
+      { "expectText": { "nav a.current": ["Home"] } },
+      { "navigate": "/blog/one" },
+      { "expectText": { "nav a.current": ["Blog"] } }, { "expect": { "main h1": null, "main p": "First para." } }
+    ]
+  },
+  {
+    "name": "run-17b Site object shape",
+    "files": {
+      "site/_site.mark": "<slot />\n",
+      "site/index.mark": "prop title = \"Home\"\nprop order = 1\nvar z = 0\n# Home {z}\n",
+      "site/blog/index.mark": "prop title = \"Blog\"\nprop order = 2\n# Posts\n",
+      "site/blog/one.mark": "prop title = \"One\"\nprop section = \"blog\"\nprop date = \"2026-01-02\"\nFirst para.\n\nSecond.\n",
+      "site/about.mark": "# About\n"
+    },
+    "steps": [
+      { "expectSite": { "Site.pages.map(p => p.path)": ["/", "/about", "/blog", "/blog/one"], "Site.nav.map(p => p.title)": ["Home", "Blog"], "Site.page('/about').title": "About", "Site.page('/blog/one').excerpt": "First para.", "Site.sections.blog.pages.length": 1 } }
+    ]
+  },
+  {
+    "name": "run-20 dynamic route with params and paths",
+    "files": { "site/_site.mark": "<slot />\n", "site/blog/[slug].mark": "prop paths = [{slug:\"x\"},{slug:\"y\"}]\n# {Page.params.slug}\n" },
+    "path": "/blog/y",
+    "steps": [{ "expect": { "h1": "y" } }]
+  },
+  {
+    "name": "run-22 Site.data",
+    "files": { "_data/authors.json": "{\"me\": {\"name\":\"Ada\"}}", "site/index.mark": "var z = 0\n{Site.data.authors.me.name}{z}\n" },
+    "steps": [{ "expectBody": "Ada0" }]
+  },
+  {
+    "name": "run-23 list merging across iterations (M-6)",
+    "files": { "site/index.mark": "var xs = [\"a\",\"b\"]\nfor p in xs {\n- {p}\n}\n<button id=b onTap={xs.push(\"c\")} />\n" },
+    "steps": [{ "expectCount": { "ul": 1, "li": 2 } }, { "click": "#b" }, { "expectCount": { "ul": 1, "li": 3 } }, { "expectText": { "li": ["a", "b", "c"] } }]
+  },
+  {
+    "name": "run-24 exports",
+    "files": { "site/components/Util.mark": "export fn double(x) = x * 2\nexport let LIMIT = 10\n", "site/index.mark": "var z = 0\n{Util.double(4)} {Util.LIMIT}{z}\n" },
+    "steps": [{ "expectBody": "8 100" }]
+  },
+  {
+    "name": "run-26 matrix multiplier core",
+    "files": { "site/index.mark": "var a = [[1,2],[3,4]]\nvar b = [[5,6],[7,8]]\nvar hovered = null\nvar aText = \"\"\nvar aTouched = false\nlet conformable = a[0].length == b.length\nlet product = conformable ? a.map(row => b[0].map((_, j) => row.reduce((s, v, k) => s + Number(v) * Number(b[k][j]), 0))) : null\nfn parseMatrix(text) {\nlet v = try(JSON.parse(text), null)\nif !Array.isArray(v) || v.length == 0 {\nreturn null\n}\nif v.every(x => Number.isFinite(x)) {\nreturn [v]\n}\nlet w = Array.isArray(v[0]) ? v[0].length : 0\nreturn w > 0 && v.every(r => Array.isArray(r) && r.length == w && r.every(Number.isFinite)) ? v : null\n}\nlet aParsed = parseMatrix(aText.trim())\nlet aError = aTouched && aText.trim() != \"\" && aParsed == null\n<table id=\"A\">\nfor row, i in a {\n<tr>\nfor _, j in row {\n<td class=\"trace\" if hovered?.i == i><input value=$a[i][j] /></td>\n}\n</tr>\n}\n</table>\nif conformable {\n<table id=\"P\">\nfor row, i in product {\n<tr>\nfor v, j in row {\n<td class=\"r\" class=\"trace\" if hovered?.i == i && hovered?.j == j onMouseenter={hovered = {i, j}} onMouseleave={hovered = null}>{v}</td>\n}\n</tr>\n}\n</table>\n} else {\n<p id=\"mm\">undefined</p>\n}\n<input id=\"at\" value=$aText onInput={aParsed && (a = aParsed)} onChange={aTouched = true} />\nif aError {\n<p id=\"err\">bad</p>\n}\n" },
+    "steps": [
+      { "expectMismatches": 0 },
+      { "expectText": { "#P td.r": ["19", "22", "43", "50"] } },
+      { "input": "#A tr:nth-child(1) td:nth-child(1) input", "value": "2" },
+      { "expectText": { "#P td.r": ["24", "28", "43", "50"] } },
+      { "get": { "a": [["2", 2], [3, 4]] } },
+      { "mouseenter": "#P td.r", "nth": 1 },
+      { "expectAttr": { "#P tr:nth-child(1) td:nth-child(2)": { "class": "r trace" }, "#P tr:nth-child(1) td:nth-child(1)": { "class": "r" }, "#A tr:nth-child(1) td:nth-child(1)": { "class": "trace" }, "#A tr:nth-child(1) td:nth-child(2)": { "class": "trace" }, "#A tr:nth-child(2) td:nth-child(1)": { "class": null } } },
+      { "mouseleave": "#P td.r", "nth": 1 },
+      { "expectCount": { ".trace": 0 } },
+      { "input": "#at", "value": "[[1,0],[0,1]]" },
+      { "expectText": { "#P td.r": ["5", "6", "7", "8"] } }, { "expect": { "#err": null } },
+      { "input": "#at", "value": "[[1,2,3]]" },
+      { "expect": { "#mm": "undefined", "#P": null } },
+      { "input": "#at", "value": "nope" }, { "expect": { "#err": null } },
+      { "change": "#at" }, { "expect": { "#err": "bad" } },
+      { "input": "#at", "value": "[[1]]" }, { "expect": { "#err": null } }, { "expectCount": { "#A td": 1 } }
+    ]
+  },
+  {
+    "name": "run-27 try inside let re-tracks deps (C-19)",
+    "files": { "site/index.mark": "var t = \"x\"\nlet n = try(JSON.parse(t).n, -1)\n<p id=p>{n}</p>\n<button id=b onTap={t = '{\"n\":7}'} />\n" },
+    "steps": [{ "expect": { "#p": "-1" } }, { "click": "#b" }, { "expect": { "#p": "7" } }, { "expectErrors": [] }]
+  },
+  {
+    "name": "run-28 async fn, next(), after(), stale-token guard",
+    "files": { "site/index.mark": "var id = 0\nvar msg = \"start\"\nvar w = 0\nvar box = null\nasync fn go() {\nlet t = (id += 1)\nmsg = \"measuring\"\nawait next()\nw = measure(box).w\nawait after(50)\nif t == id {\nmsg = \"done\"\n}\n}\n<div id=box ref={box} style=\"width:120px\">x</div>\n<p id=m>{msg}</p><p id=w>{w}</p>\n<button id=g onTap={go()} />\n" },
+    "steps": [
+      { "expect": { "#m": "start", "#w": "0" } },
+      { "click": "#g" }, { "expect": { "#m": "measuring", "#w": "120" } },
+      { "wait": 100 }, { "expect": { "#m": "done" } },
+      { "observe": "#m" }, { "click": "#g" }, { "click": "#g" }, { "wait": 100 }, { "expect": { "#m": "done" } }, { "expectMutations": 2 }
+    ]
+  },
+  {
+    "name": "run-29 scoped styles",
+    "files": { "site/components/Box.mark": "var z = 0\n<div class=x>b{z}</div>\n<style>\n.x { color: rgb(1, 2, 3) }\n</style>\n", "site/index.mark": "<div class=x id=outer>a</div>\n<Box />\n" },
+    "steps": [{ "expectCount": { "div.x[data-mk-Box]": 1, "#outer[data-mk-Box]": 0 } }]
+  },
+  {
+    "name": "run-30 style object with custom properties (T-26)",
+    "files": { "site/index.mark": "var x = 10\n<div id=d style={{\"--x0\": x + \"px\", color: \"red\"}}>a</div>\n<button id=b onTap={x = 20} />\n" },
+    "steps": [{ "expectAttr": { "#d": { "style": "--x0: 10px; color: red" } } }, { "click": "#b" }, { "expectAttr": { "#d": { "style": "--x0: 20px; color: red" } } }]
+  },
+  {
+    "name": "run-31 hydration adopts existing nodes (no re-render)",
+    "files": { "site/index.mark": "var n = 0\n<div id=wrap>\n<p class=static>static text</p>\n<button id=b onTap={n += 1}>{n}</button>\n</div>\n" },
+    "steps": [{ "expectMismatches": 0 }, { "mark": "#wrap", "as": "w" }, { "expect": { "#wrap": "<p class=\"static\">static text</p><button id=\"b\">0</button>" } }, { "click": "#b" }, { "expect": { "#b": "1" } }, { "same": "#wrap", "as": "w" }, { "expectErrors": [] }]
+  },
+  {
+    "name": "run-18 (SPA) layout chain and state preservation across navigation",
+    "config": { "spa": true },
+    "files": {
+      "site/_site.mark": "var clicks = 0\n<button id=g onTap={clicks += 1}>{clicks}</button>\n<slot />\n",
+      "site/blog/_layout.mark": "var local = 0\n<button id=l onTap={local += 1}>{local}</button>\n<div class=post><slot /></div>\n",
+      "site/blog/a.mark": "A\n",
+      "site/blog/b.mark": "B\n",
+      "site/index.mark": "Home\n"
+    },
+    "path": "/blog/a",
+    "steps": [
+      { "click": "#g" }, { "click": "#l" }, { "expect": { "#g": "1", "#l": "1" } },
+      { "navigate": "/blog/b" }, { "expect": { "#g": "1", "#l": "1", ".post": "<p>B</p>" } }, { "expectSpaPage": "/blog/b" },
+      { "navigate": "/" }, { "expect": { "#g": "1", "#l": null } }, { "expectBody": "<p>Home</p>" },
+      { "navigate": "/blog/a" }, { "expect": { "#l": "0", ".post": "<p>A</p>" } }
+    ]
+  },
+  {
+    "name": "run-19 (SPA) link interception and Page.path assignment",
+    "config": { "spa": true },
+    "files": { "site/_site.mark": "<slot />\n", "site/index.mark": "<a id=x href=\"/two\">go</a>\n<button id=y onTap={Page.path = \"/two\"} />\n", "site/two.mark": "Two\n" },
+    "steps": [
+      { "click": "#x" }, { "wait": 5 }, { "expectSpaPage": "/two" }, { "expectPath": "/two" }, { "expectBody": "<p>Two</p>" }, { "expectHistoryGrew": 1 },
+      { "navigate": "/" }, { "expectBody": "<a id=\"x\" href=\"/two\">go</a>" },
+      { "click": "#y" }, { "wait": 5 }, { "expectSpaPage": "/two" }, { "expectBody": "<p>Two</p>" }
+    ]
+  },
+  {
+    "name": "run-20 (SPA) client-rendered fallback route and 404",
+    "config": { "spa": true },
+    "files": { "site/_site.mark": "<slot />\n", "site/_404.mark": "# Not found\n", "site/blog/[slug].mark": "prop paths = [{slug:\"x\"},{slug:\"y\"}]\n# {Page.params.slug}\n" },
+    "path": "/blog/zzz",
+    "steps": [{ "expect": { "h1": "zzz" } }, { "navigate": "/nope" }, { "expect": { "h1": "Not found" } }, { "navigate": "/blog/y" }, { "expect": { "h1": "y" } }]
+  },
+  {
+    "name": "run-21 (SPA) head hoisting and title",
+    "config": { "spa": true },
+    "files": { "site/_site.mark": "<head><title>{Page.title} · S</title></head>\n<slot />\n", "site/index.mark": "prop title = \"Home\"\nhi\n", "site/about.mark": "prop title = \"About\"\n<head><meta name=\"x\" content=\"y\" /></head>\nhi\n" },
+    "steps": [
+      { "expectTitle": "Home · S" }, { "expectHead": { "meta[name=x]": false } },
+      { "navigate": "/about" }, { "expectTitle": "About · S" }, { "expectHead": { "meta[name=x]": true } },
+      { "navigate": "/" }, { "expectTitle": "Home · S" }, { "expectHead": { "meta[name=x]": false } }
+    ]
+  }
+]

@@ -1,0 +1,7 @@
+prop title = "Matrix multiplication"
+prop section = "blog"
+prop date = "2026-09-05"
+
+A port of the Svelte matrix multiplier (spec appendix A).
+
+<MatMul />

@@ -1,0 +1,6 @@
+prop title = "About"
+prop order = 3
+
+# About
+
+Written by [{Site.data.authors.me.name}]({Site.data.authors.me.url}).

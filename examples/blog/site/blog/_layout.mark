@@ -1,0 +1,11 @@
+<article class="post">
+<slot />
+</article>
+<aside>
+### More posts
+for p in Site.under("/blog") key p.path {
+if p.path != Page.path {
+- [{p.title}]({p.path})
+}
+}
+</aside>

@@ -1,0 +1,11 @@
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/style.css" />
+<title>{Page.title} · My Blog</title>
+</head>
+<Nav />
+<main>
+<slot />
+</main>
+<footer>© {new Date("2026-01-01").getFullYear()} {Site.data.authors.me.name}</footer>

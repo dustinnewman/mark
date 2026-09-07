@@ -1,0 +1,537 @@
+[
+  {
+    "name": "parse-01 prose only",
+    "src": "# Hello\n\nSome *text*.\n",
+    "ast": [{ "t": "prose", "md": "# Hello\n\nSome *text*.\n", "parts": [], "line": 1 }]
+  },
+  {
+    "name": "parse-02 keyword line is code, escaped keyword is prose",
+    "src": "var x = 1\n\\for the record\n",
+    "ast": [
+      { "t": "var", "name": "x", "init": { "type": "Literal", "value": 1 }, "line": 1 },
+      { "t": "prose", "md": "for the record\n", "parts": [], "line": 2 }
+    ]
+  },
+  {
+    "name": "parse-03 interpolation placeholder",
+    "src": "Value is {x + 1}.\n",
+    "ast": [
+      {
+        "t": "prose",
+        "md": "Value is \u00000\u0000.\n",
+        "parts": [
+          {
+            "p": "interp",
+            "expr": {
+              "type": "BinaryExpression",
+              "operator": "+",
+              "left": { "type": "Identifier", "name": "x" },
+              "right": { "type": "Literal", "value": 1 }
+            },
+            "inMath": false
+          }
+        ],
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "parse-04 escaped braces and code spans are literal",
+    "src": "Literal \\{x\\} and `{y}`\n",
+    "ast": [{ "t": "prose", "md": "Literal {x} and `{y}`\n", "parts": [], "line": 1 }]
+  },
+  {
+    "name": "parse-05 if / else if / else",
+    "src": "if a {\nA\n} else if b {\nB\n} else {\nC\n}\n",
+    "ast": [
+      {
+        "t": "if",
+        "cond": { "type": "Identifier", "name": "a" },
+        "then": [{ "t": "prose", "md": "A\n", "parts": [], "line": 2 }],
+        "else": {
+          "t": "if",
+          "cond": { "type": "Identifier", "name": "b" },
+          "then": [{ "t": "prose", "md": "B\n", "parts": [], "line": 4 }],
+          "else": [{ "t": "prose", "md": "C\n", "parts": [], "line": 6 }],
+          "line": 3
+        },
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "parse-06 else on its own line is an error",
+    "src": "if a {\nA\n}\nelse {\nB\n}\n",
+    "error": "E001"
+  },
+  {
+    "name": "parse-07 for with index and key",
+    "src": "for p, i in Site.pages key p.path {\n- {p.title}\n}\n",
+    "ast": [
+      {
+        "t": "for",
+        "item": "p",
+        "index": "i",
+        "src": {
+          "type": "MemberExpression",
+          "object": { "type": "Identifier", "name": "Site" },
+          "property": { "type": "Identifier", "name": "pages" },
+          "computed": false
+        },
+        "key": {
+          "type": "MemberExpression",
+          "object": { "type": "Identifier", "name": "p" },
+          "property": { "type": "Identifier", "name": "path" },
+          "computed": false
+        },
+        "body": [
+          {
+            "t": "prose",
+            "md": "- \u00000\u0000\n",
+            "parts": [
+              {
+                "p": "interp",
+                "expr": {
+                  "type": "MemberExpression",
+                  "object": { "type": "Identifier", "name": "p" },
+                  "property": { "type": "Identifier", "name": "title" },
+                  "computed": false
+                },
+                "inMath": false
+              }
+            ],
+            "line": 2
+          }
+        ],
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "parse-08 tag attributes: static, dynamic, conditional, bind shorthand, bind named, event",
+    "src": "<a href={s.path} class=\"link\" class=\"current\" if cur(s) value=$theta $coin.heads onTap={n += 1} onKeydown={handle}>x</a>\n",
+    "ast": [
+      {
+        "t": "tag",
+        "name": "a",
+        "kind": "html",
+        "selfClose": false,
+        "line": 1,
+        "attrs": [
+          {
+            "k": "dyn",
+            "name": "href",
+            "value": {
+              "type": "MemberExpression",
+              "object": { "type": "Identifier", "name": "s" },
+              "property": { "type": "Identifier", "name": "path" },
+              "computed": false
+            }
+          },
+          { "k": "static", "name": "class", "value": "link" },
+          {
+            "k": "static",
+            "name": "class",
+            "value": "current",
+            "if": {
+              "type": "CallExpression",
+              "callee": { "type": "Identifier", "name": "cur" },
+              "arguments": [{ "type": "Identifier", "name": "s" }]
+            }
+          },
+          { "k": "bind", "name": "value", "path": ["theta"] },
+          { "k": "bind", "name": "heads", "path": ["coin", "heads"] },
+          {
+            "k": "event",
+            "name": "onTap",
+            "handler": {
+              "type": "AssignmentExpression",
+              "operator": "+=",
+              "left": { "type": "Identifier", "name": "n" },
+              "right": { "type": "Literal", "value": 1 }
+            },
+            "wrap": true
+          },
+          { "k": "event", "name": "onKeydown", "handler": { "type": "Identifier", "name": "handle" }, "wrap": false }
+        ],
+        "children": [{ "t": "prose", "md": "x", "parts": [], "line": 1 }]
+      }
+    ]
+  },
+  {
+    "name": "parse-09 multi-line tag (L-7)",
+    "src": "<Slider\n  value=$theta\n  min={0}\n/>\n",
+    "ast": [
+      {
+        "t": "tag",
+        "name": "Slider",
+        "kind": "comp",
+        "selfClose": true,
+        "line": 1,
+        "attrs": [
+          { "k": "bind", "name": "value", "path": ["theta"] },
+          { "k": "dyn", "name": "min", "value": { "type": "Literal", "value": 0 } }
+        ],
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "parse-10 mismatched close tag",
+    "src": "<div>\nhi\n</span>\n",
+    "error": "E002"
+  },
+  {
+    "name": "parse-11 fenced code is opaque",
+    "src": "```js\nfor (;;) {}\nvar x\n```\n",
+    "ast": [{ "t": "prose", "md": "```js\nfor (;;) {}\nvar x\n```\n", "parts": [], "line": 1 }]
+  },
+  {
+    "name": "parse-12 display math block is opaque; inline math interpolation",
+    "src": "$$\n\\sum_{i} x_i\n$$\n\nSo $p = {lik} $ here.\n",
+    "ast": [
+      {
+        "t": "prose",
+        "md": "$$\n\\sum_{i} x_i\n$$\n\nSo $p = \u00000\u0000 $ here.\n",
+        "parts": [{ "p": "interp", "expr": { "type": "Identifier", "name": "lik" }, "inMath": true }],
+        "line": 1
+      }
+    ]
+  },
+  {
+    "name": "parse-13 fn forms",
+    "src": "fn sq(x) = x * x\nfn f(a, b) {\na = a + 1; b\n}\n",
+    "ast": [
+      {
+        "t": "fn",
+        "name": "sq",
+        "params": ["x"],
+        "async": false,
+        "body": {
+          "type": "BinaryExpression",
+          "operator": "*",
+          "left": { "type": "Identifier", "name": "x" },
+          "right": { "type": "Identifier", "name": "x" }
+        },
+        "line": 1
+      },
+      {
+        "t": "fn",
+        "name": "f",
+        "params": ["a", "b"],
+        "async": false,
+        "body": [
+          {
+            "s": "expr",
+            "line": 3,
+            "expr": {
+              "type": "SequenceExpression",
+              "expressions": [
+                {
+                  "type": "AssignmentExpression",
+                  "operator": "=",
+                  "left": { "type": "Identifier", "name": "a" },
+                  "right": {
+                    "type": "BinaryExpression",
+                    "operator": "+",
+                    "left": { "type": "Identifier", "name": "a" },
+                    "right": { "type": "Literal", "value": 1 }
+                  }
+                },
+                { "type": "Identifier", "name": "b" }
+              ]
+            }
+          }
+        ],
+        "line": 2
+      }
+    ]
+  },
+  {
+    "name": "parse-14 head block",
+    "src": "<head>\n<title>{Page.title} · Blog</title>\n</head>\n",
+    "ast": [
+      {
+        "t": "head",
+        "line": 1,
+        "children": [
+          {
+            "t": "tag",
+            "name": "title",
+            "kind": "html",
+            "selfClose": false,
+            "line": 2,
+            "attrs": [],
+            "children": [
+              {
+                "t": "prose",
+                "md": "\u00000\u0000 · Blog",
+                "parts": [
+                  {
+                    "p": "interp",
+                    "expr": {
+                      "type": "MemberExpression",
+                      "object": { "type": "Identifier", "name": "Page" },
+                      "property": { "type": "Identifier", "name": "title" },
+                      "computed": false
+                    },
+                    "inMath": false
+                  }
+                ],
+                "line": 2
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "parse-15 object literal directly inside braces (G-2)",
+    "src": "<div style={{color: \"red\"}} />\n{{a: 1}.a}\n",
+    "ast": [
+      {
+        "t": "tag",
+        "name": "div",
+        "kind": "html",
+        "selfClose": true,
+        "line": 1,
+        "children": [],
+        "attrs": [
+          {
+            "k": "dyn",
+            "name": "style",
+            "value": {
+              "type": "ObjectExpression",
+              "properties": [
+                {
+                  "type": "Property",
+                  "key": { "type": "Identifier", "name": "color" },
+                  "value": { "type": "Literal", "value": "red" },
+                  "computed": false,
+                  "shorthand": false,
+                  "kind": "init"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "t": "prose",
+        "md": "\u00000\u0000\n",
+        "line": 2,
+        "parts": [
+          {
+            "p": "interp",
+            "inMath": false,
+            "expr": {
+              "type": "MemberExpression",
+              "computed": false,
+              "object": {
+                "type": "ObjectExpression",
+                "properties": [
+                  {
+                    "type": "Property",
+                    "key": { "type": "Identifier", "name": "a" },
+                    "value": { "type": "Literal", "value": 1 },
+                    "computed": false,
+                    "shorthand": false,
+                    "kind": "init"
+                  }
+                ]
+              },
+              "property": { "type": "Identifier", "name": "a" }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "parse-16 try expression, lazy operands",
+    "src": "let p = try(JSON.parse(t), e => null)\n",
+    "ast": [
+      {
+        "t": "let",
+        "name": "p",
+        "line": 1,
+        "init": {
+          "type": "TryExpression",
+          "expr": {
+            "type": "CallExpression",
+            "callee": {
+              "type": "MemberExpression",
+              "object": { "type": "Identifier", "name": "JSON" },
+              "property": { "type": "Identifier", "name": "parse" },
+              "computed": false
+            },
+            "arguments": [{ "type": "Identifier", "name": "t" }]
+          },
+          "fallback": {
+            "type": "ArrowFunctionExpression",
+            "async": false,
+            "params": [{ "type": "Identifier", "name": "e" }],
+            "body": { "type": "Literal", "value": null },
+            "expression": true
+          }
+        }
+      }
+    ]
+  },
+  { "name": "parse-16b try with one operand", "src": "let p = try(x)\n", "error": "E018" },
+  { "name": "parse-16c try as identifier", "src": "var try = 1\n", "error": "SYNTAX" },
+  {
+    "name": "parse-17 bind path with computed members",
+    "src": "<input value=$a[i][j] />\n<Cell $rows[k].name />\n",
+    "ast": [
+      {
+        "t": "tag",
+        "name": "input",
+        "kind": "html",
+        "selfClose": true,
+        "line": 1,
+        "children": [],
+        "attrs": [
+          { "k": "bind", "name": "value", "path": ["a", { "type": "Identifier", "name": "i" }, { "type": "Identifier", "name": "j" }] }
+        ]
+      },
+      {
+        "t": "tag",
+        "name": "Cell",
+        "kind": "comp",
+        "selfClose": true,
+        "line": 2,
+        "children": [],
+        "attrs": [{ "k": "bind", "name": "name", "path": ["rows", { "type": "Identifier", "name": "k" }, "name"] }]
+      }
+    ]
+  },
+  { "name": "parse-17b shorthand ending in index", "src": "<Cell $rows[k] />\n", "error": "E019" },
+  {
+    "name": "parse-18 block fn with statements, async, await",
+    "src": "async fn go(n) {\nlet t = (id += 1)\nawait next()\nif t != id {\nreturn\n}\nfor x in xs {\ntotal += x\n}\nreturn total\n}\n",
+    "ast": [
+      {
+        "t": "fn",
+        "name": "go",
+        "params": ["n"],
+        "async": true,
+        "line": 1,
+        "body": [
+          {
+            "s": "let",
+            "name": "t",
+            "line": 2,
+            "init": {
+              "type": "AssignmentExpression",
+              "operator": "+=",
+              "left": { "type": "Identifier", "name": "id" },
+              "right": { "type": "Literal", "value": 1 }
+            }
+          },
+          {
+            "s": "expr",
+            "line": 3,
+            "expr": {
+              "type": "AwaitExpression",
+              "argument": { "type": "CallExpression", "callee": { "type": "Identifier", "name": "next" }, "arguments": [] }
+            }
+          },
+          {
+            "s": "if",
+            "line": 4,
+            "cond": {
+              "type": "BinaryExpression",
+              "operator": "!=",
+              "left": { "type": "Identifier", "name": "t" },
+              "right": { "type": "Identifier", "name": "id" }
+            },
+            "then": [{ "s": "return", "line": 5 }]
+          },
+          {
+            "s": "for",
+            "line": 7,
+            "item": "x",
+            "src": { "type": "Identifier", "name": "xs" },
+            "body": [
+              {
+                "s": "expr",
+                "line": 8,
+                "expr": {
+                  "type": "AssignmentExpression",
+                  "operator": "+=",
+                  "left": { "type": "Identifier", "name": "total" },
+                  "right": { "type": "Identifier", "name": "x" }
+                }
+              }
+            ]
+          },
+          { "s": "return", "line": 10, "value": { "type": "Identifier", "name": "total" } }
+        ]
+      }
+    ]
+  },
+  { "name": "parse-18b prose in fn body", "src": "fn f() {\nhello\n}\n", "error": "SYNTAX" },
+  {
+    "name": "parse-19 style block is opaque",
+    "src": "<style>\n.x { color: red }\nfor { }\n</style>\n",
+    "ast": [{ "t": "style", "css": ".x { color: red }\nfor { }\n", "global": false, "line": 1 }]
+  },
+  { "name": "parse-19b style inside block", "src": "if a {\n<style>\n</style>\n}\n", "error": "E020" },
+  {
+    "name": "parse-20 nested tags on a block line become children",
+    "src": "<section><h2>{title}</h2><slot /></section>\n",
+    "ast": [
+      {
+        "t": "tag", "name": "section", "kind": "html", "selfClose": false, "line": 1, "attrs": [],
+        "children": [
+          { "t": "tag", "name": "h2", "kind": "html", "selfClose": false, "line": 1, "attrs": [],
+            "children": [{ "t": "prose", "md": "\u00000\u0000", "line": 1, "parts": [{ "p": "interp", "expr": { "type": "Identifier", "name": "title" }, "inMath": false }] }] },
+          { "t": "tag", "name": "slot", "kind": "html", "selfClose": true, "line": 1, "attrs": [], "children": [] }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "parse-21 two sibling tags on one line, comment after code",
+    "src": "<p id=m>{msg}</p><p id=w>{w}</p>\nvar phase = \"idle\"  // comment\n",
+    "ast": [
+      { "t": "tag", "name": "p", "kind": "html", "selfClose": false, "line": 1, "attrs": [{ "k": "static", "name": "id", "value": "m" }],
+        "children": [{ "t": "prose", "md": "\u00000\u0000", "line": 1, "parts": [{ "p": "interp", "expr": { "type": "Identifier", "name": "msg" }, "inMath": false }] }] },
+      { "t": "tag", "name": "p", "kind": "html", "selfClose": false, "line": 1, "attrs": [{ "k": "static", "name": "id", "value": "w" }],
+        "children": [{ "t": "prose", "md": "\u00000\u0000", "line": 1, "parts": [{ "p": "interp", "expr": { "type": "Identifier", "name": "w" }, "inMath": false }] }] },
+      { "t": "var", "name": "phase", "init": { "type": "Literal", "value": "idle" }, "line": 2 }
+    ]
+  },
+  {
+    "name": "parse-22 inline tag in prose line and math with literal braces",
+    "src": "Hi <b>there</b> and $\\frac{a}{b}$ and $5 and $10.\n",
+    "ast": [
+      { "t": "prose", "md": "Hi \u00000\u0000 and $\\frac{a}{b}$ and $5 and $10.\n", "line": 1,
+        "parts": [{ "p": "tag", "node": { "t": "tag", "name": "b", "kind": "html", "selfClose": false, "line": 1, "attrs": [],
+          "children": [{ "t": "prose", "md": "there", "parts": [], "line": 1 }] } }] }
+    ]
+  },
+  {
+    "name": "parse-23 optional chaining and arrows",
+    "src": "let x = o?.a?.b\nlet f = (a, b) => a + b\nlet g = async x => await x\n",
+    "ast": [
+      { "t": "let", "name": "x", "line": 1, "init": { "type": "ChainExpression", "expression": {
+        "type": "MemberExpression", "computed": false, "optional": true,
+        "object": { "type": "MemberExpression", "computed": false, "optional": true, "object": { "type": "Identifier", "name": "o" }, "property": { "type": "Identifier", "name": "a" } },
+        "property": { "type": "Identifier", "name": "b" } } } },
+      { "t": "let", "name": "f", "line": 2, "init": { "type": "ArrowFunctionExpression", "async": false, "expression": true,
+        "params": [{ "type": "Identifier", "name": "a" }, { "type": "Identifier", "name": "b" }],
+        "body": { "type": "BinaryExpression", "operator": "+", "left": { "type": "Identifier", "name": "a" }, "right": { "type": "Identifier", "name": "b" } } } },
+      { "t": "let", "name": "g", "line": 3, "init": { "type": "ArrowFunctionExpression", "async": true, "expression": true,
+        "params": [{ "type": "Identifier", "name": "x" }],
+        "body": { "type": "AwaitExpression", "argument": { "type": "Identifier", "name": "x" } } } }
+    ]
+  },
+  {
+    "name": "parse-24 unclosed block",
+    "src": "if a {\nA\n",
+    "error": "SYNTAX"
+  }
+]

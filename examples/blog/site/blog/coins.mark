@@ -1,0 +1,29 @@
+prop title = "A posterior for coins"
+prop section = "blog"
+prop date = "2026-09-01"
+prop tags = ["bayes", "interactive"]
+
+Here's my posterior probability calculator! Play around with it.
+
+## $\theta$
+
+var theta = 0.5
+<Slider value=$theta min={0} max={1} step={0.01} />
+if theta == 0.5 {
+This is a fair coin!
+}
+
+## $X$
+
+var coins = []
+for coin in coins {
+<CoinBox $coin.heads />
+}
+<Stepper onTap={coins.push({heads: true})} />
+
+## The likelihood $p(X \mid \theta)$
+
+let h = coins.filter(c => c.heads).length
+let lik = theta ** h * (1 - theta) ** (coins.length - h)
+
+$$p(X \mid \theta) = \theta^{ {h} }(1-\theta)^{ {coins.length - h} } = {lik.toFixed(4)}$$

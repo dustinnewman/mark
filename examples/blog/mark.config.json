@@ -1,0 +1,1 @@
+{ "root": "site", "out": "dist", "base": "/", "spa": false, "math": "mathml" }
