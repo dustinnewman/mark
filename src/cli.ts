@@ -88,6 +88,6 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   }
 }
 
-if (process.argv[1] && /cli\.(ts|js|cjs)$/.test(process.argv[1]) || process.argv[1]?.endsWith("/mark")) {
+if (process.argv[1] && /cli\.(ts|js|cjs)$/.test(process.argv[1])) {
   main().then((code) => { process.exitCode = code; }, (e) => { console.error(e); process.exitCode = 1; });
 }
