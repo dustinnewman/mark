@@ -1,7 +1,8 @@
 // Bundled assets (runtime, KaTeX) are read from the package during development and
 // from the single-executable blob (`node:sea`) in the compiled binary.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { createRequire } from "node:module";
+import { dirname, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 interface SeaApi { isSea(): boolean; getAsset(key: string, enc?: string): ArrayBuffer | string }
@@ -26,23 +27,26 @@ export function hasSeaAssets(): boolean { return sea !== null || embedded !== nu
 export function textAsset(key: string, fallbackPath: string): string | null {
   if (sea) { try { return sea.getAsset(key, "utf8") as string; } catch { return null; } }
   if (embedded) return key in embedded ? Buffer.from(embedded[key], "base64").toString("utf8") : null;
-  const p = join(pkgDir(), fallbackPath);
+  const p = isAbsolute(fallbackPath) ? fallbackPath : join(pkgDir(), fallbackPath);
   return existsSync(p) ? readFileSync(p, "utf8") : null;
 }
 
 export function binaryAsset(key: string, fallbackPath: string): Buffer | null {
   if (sea) { try { return Buffer.from(sea.getAsset(key) as ArrayBuffer); } catch { return null; } }
   if (embedded) return key in embedded ? Buffer.from(embedded[key], "base64") : null;
-  const p = join(pkgDir(), fallbackPath);
+  const p = isAbsolute(fallbackPath) ? fallbackPath : join(pkgDir(), fallbackPath);
   return existsSync(p) ? readFileSync(p) : null;
 }
 
-export const KATEX_DIST = "node_modules/katex/dist";
+/** KaTeX's dist directory, wherever npm put the package (it is hoisted when Mark is itself a dependency). */
+export const KATEX_DIST = ((): string => {
+  try { return join(dirname(createRequire(import.meta.url).resolve("katex/package.json")), "dist"); } catch { return "node_modules/katex/dist"; }
+})();
 
 /** KaTeX font file names (woff2 only; the stylesheet lists woff2 first). */
 export function katexFontNames(): string[] {
   const list = textAsset("katex-fonts.json", "__none__");
   if (list) return JSON.parse(list);
-  const dir = join(pkgDir(), KATEX_DIST, "fonts");
+  const dir = join(KATEX_DIST, "fonts");
   return existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".woff2")) : [];
 }

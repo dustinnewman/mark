@@ -9,10 +9,11 @@
   "scripts": {
     "test": "node --disable-warning=ExperimentalWarning tests/runner.ts",
     "runtime": "node --disable-warning=ExperimentalWarning scripts/bundle-runtime.ts",
+    "lib": "node --disable-warning=ExperimentalWarning scripts/bundle-lib.ts",
     "bundle": "node --disable-warning=ExperimentalWarning scripts/bundle-cli.ts",
     "binary": "bash scripts/build-binary.sh",
     "typecheck": "tsc --noEmit",
-    "prepare": "node --disable-warning=ExperimentalWarning scripts/bundle-runtime.ts"
+    "prepare": "npm run runtime && npm run lib"
   },
   "dependencies": {
     "katex": "^0.16.11"
@@ -32,6 +33,7 @@
   "files": [
     "bin",
     "src",
+    "lib",
     "runtime",
     "README.md",
     "spec.md"

@@ -30,6 +30,11 @@ npm test                                           # spec test suites (tests/**/
 Single-file executable (Node SEA): `npm run binary` produces `build/mark`, which embeds the
 browser runtime and KaTeX.
 
+As a dependency (`npm install github:dustinnewman/mark`), `mark` runs the committed bundle
+`lib/cli.js` because Node will not strip types under `node_modules`. `runtime/runtime.js` and
+`lib/cli.js` are build artifacts kept in git; `npm run runtime && npm run lib` (or `npm install`,
+via `prepare`) refreshes them — run that before pushing changes to `src/`.
+
 ## Project layout
 
 ```
