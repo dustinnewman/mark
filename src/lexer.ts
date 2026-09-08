@@ -17,7 +17,9 @@ const PUNCT = [
   "(", ")", "[", "]", "{", "}", ",", ";", ":", ".", "?", "=", "<", ">", "+", "-", "*", "/", "%", "!", "$",
 ];
 
-const CONTINUATION = /^(?:\n[ \t]*)+(\?|:|&&|\|\||\.(?=[A-Za-z_]))/;
+/** A line starting with one of these continues the expression on the previous line. */
+export const CONTINUATION_START = /\?|:|&&|\|\||\.(?=[A-Za-z_])/;
+const CONTINUATION = new RegExp("^(?:\\n[ \\t]*)+(" + CONTINUATION_START.source + ")");
 
 export const isIdentStart = (c: string): boolean => /[A-Za-z_]/.test(c);
 export const isIdentChar = (c: string): boolean => /[A-Za-z0-9_]/.test(c);

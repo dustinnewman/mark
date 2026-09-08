@@ -12,6 +12,8 @@ const BIN_PREC: Record<string, number> = {
   "+": 5, "-": 5, "*": 6, "/": 6, "%": 6,
 };
 const ASSIGN_OPS = new Set(["=", "+=", "-=", "*=", "/="]);
+/** In a tag's `if` expression a `>` followed by this is a comparison, not the end of the tag. */
+export const GT_CONTINUES = /^[ \t]+[\w("'\[{!\-.]/;
 
 export interface ParseOpts {
   /** Whitespace (and newlines) may separate tokens at the outermost level. */
@@ -132,7 +134,7 @@ export class ExprParser {
     for (;;) {
       const t = this.peek();
       if (t.type !== "punct") break;
-      if (this.tag && (t.value === "/>" || (t.value === ">" && !/^[ \t]+[\w("'\[{!\-.]/.test(this.sc.src.slice(t.end))))) break;
+      if (this.tag && (t.value === "/>" || (t.value === ">" && !GT_CONTINUES.test(this.sc.src.slice(t.end))))) break;
       const prec = BIN_PREC[t.value];
       if (prec === undefined || prec < minPrec) break;
       this.next();

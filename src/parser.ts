@@ -1,14 +1,14 @@
 import type { Attr, Document, Expr, ForNode, IfNode, IfStmt, Node, ProseNode, ProsePart, Stmt, TagNode } from "./ast.ts";
 import { placeholder } from "./ast.ts";
 import { MarkError, MSG, syntax } from "./diagnostics.ts";
-import { ExprParser } from "./expr.ts";
+import { ExprParser, RESERVED } from "./expr.ts";
 import { Scanner, isIdentChar, isIdentStart } from "./lexer.ts";
 
 export const VOID_ELEMENTS = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
 
-const CODE_LINE = /^(?:(?:export\s+)?(?:async\s+)?(?:var|let|prop|fn)\s|(?:if|for)\s|\}|else\b|<[A-Za-z]|<\/[A-Za-z])/;
-const TAG_NAME = /^(?:[a-z][a-z0-9-]*|[A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)*)/;
-const ATTR_NAME = /^[A-Za-z_:][A-Za-z0-9_:.-]*/;
+export const CODE_LINE = /^(?:(?:export\s+)?(?:async\s+)?(?:var|let|prop|fn)\s|(?:if|for)\s|\}|else\b|<[A-Za-z]|<\/[A-Za-z])/;
+export const TAG_NAME = /^(?:[a-z][a-z0-9-]*|[A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)*)/;
+export const ATTR_NAME = /^[A-Za-z_:][A-Za-z0-9_:.-]*/;
 
 interface Pending { md: string; parts: ProsePart[]; line: number; touched: boolean }
 
@@ -772,5 +772,4 @@ function needsWrap(e: Expr): boolean {
   return !(e.type === "Identifier" || e.type === "MemberExpression" || e.type === "ArrowFunctionExpression");
 }
 
-const RESERVED_DECL = new Set(["var", "let", "prop", "fn", "if", "else", "for", "in", "key", "try", "return", "await", "async", "true", "false", "null", "undefined", "slot"]);
-function isReserved(s: string): boolean { return RESERVED_DECL.has(s); }
+function isReserved(s: string): boolean { return RESERVED.has(s); }

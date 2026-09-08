@@ -68,6 +68,7 @@ mark.config.json { root, out, base, spa, math: "mathml" | "katex", katex: { macr
 | `src/build.ts`, `src/emit.ts` | Page evaluation, output contract (§12.3), module emission |
 | `src/runtime/*` | Browser runtime: DOM host with hydration-by-adoption, `hydrate`, SPA navigation |
 | `src/css.ts` | Scoped `<style>` rewriting (§6.5) |
+| `scripts/build-grammar.ts` | Generates the editor grammar in `editors/vscode/` from the parser's line classifier and token regexes |
 
 The evaluator and the runtime are the *same* interpreter and renderer driving two hosts
 (a virtual tree at build time, the DOM in the browser). The emitted module for a document is
@@ -77,6 +78,18 @@ what the runtime adopts.
 
 The runtime bundle is 13 kB min+gz (`npm run runtime` reports the size). KaTeX is a separate
 chunk loaded only by pages with dynamic math.
+
+## Editor support
+
+`editors/vscode/` is a VS Code extension providing syntax highlighting for `.mark` files. Its
+TextMate grammar is generated (`npm run grammar`) from the same regexes the parser uses for line
+classification, tags, attributes and reserved words, so it stays in step with `src/`. Install it by
+packaging a VSIX and reloading the window:
+
+```sh
+npm run vsix
+code --install-extension build/mark-lang-vscode-0.1.0.vsix
+```
 
 ## Tests
 

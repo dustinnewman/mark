@@ -11,6 +11,8 @@
     "runtime": "node --disable-warning=ExperimentalWarning scripts/bundle-runtime.ts",
     "lib": "node --disable-warning=ExperimentalWarning scripts/bundle-lib.ts",
     "bundle": "node --disable-warning=ExperimentalWarning scripts/bundle-cli.ts",
+    "grammar": "node --disable-warning=ExperimentalWarning scripts/build-grammar.ts",
+    "vsix": "cd editors/vscode && npx --yes @vscode/vsce package --allow-missing-repository --skip-license -o ../../build/mark-lang-vscode-0.1.0.vsix",
     "binary": "bash scripts/build-binary.sh",
     "typecheck": "tsc --noEmit",
     "prepare": "npm run runtime && npm run lib"

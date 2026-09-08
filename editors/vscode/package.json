@@ -1,0 +1,28 @@
+{
+  "name": "mark-lang-vscode",
+  "displayName": "Mark",
+  "description": "Syntax highlighting for Mark (.mark) files",
+  "version": "0.1.0",
+  "publisher": "dustinnewman",
+  "license": "MIT",
+  "engines": { "vscode": "^1.80.0" },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "mark",
+        "aliases": ["Mark"],
+        "extensions": [".mark"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "mark",
+        "scopeName": "source.mark",
+        "path": "./syntaxes/mark.tmLanguage.json",
+        "embeddedLanguages": { "source.css.embedded.mark": "css" }
+      }
+    ]
+  }
+}
