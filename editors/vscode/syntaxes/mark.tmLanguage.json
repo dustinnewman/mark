@@ -46,7 +46,7 @@
       "name": "comment.line.double-slash.mark"
     },
     "escaped-line": {
-      "match": "^\\s*(\\\\)(?=(?:(?:export\\s+)?(?:async\\s+)?(?:var|let|prop|fn)\\s|(?:if|for)\\s|\\}|else\\b|<[A-Za-z]|<\\/[A-Za-z]))",
+      "match": "^\\s*(\\\\)(?=(?:(?:export\\s+)?(?:async\\s+)?(?:var|let|prop|fn)\\s|for\\s+[A-Za-z_][A-Za-z0-9_]*(?:\\s*,\\s*[A-Za-z_][A-Za-z0-9_]*)?\\s+in\\s.+\\{\\s*$|if\\s+.+\\{\\s*$|\\}|else\\b|<[A-Za-z]|<\\/[A-Za-z]))",
       "captures": {
         "1": {
           "name": "constant.character.escape.mark"
@@ -127,7 +127,7 @@
       ]
     },
     "fn-block": {
-      "begin": "^\\s*(?:(export)\\s+)?(?:(async)\\s+)?(fn)\\s+([A-Za-z_]\\w*)\\s*(\\()([^)]*)(\\))\\s*(\\{)\\s*$",
+      "begin": "^\\s*(?:(export)\\s+)?(?:(async)\\s+)?(fn)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*(\\()([^)]*)(\\))\\s*(\\{)\\s*$",
       "end": "^\\s*(\\})",
       "beginCaptures": {
         "1": {
@@ -224,7 +224,7 @@
       ]
     },
     "decl-line": {
-      "begin": "^\\s*((?:export\\s+)?(?:async\\s+)?(?:var|let|prop|fn|if|for))\\b",
+      "begin": "^\\s*(?=(?:export\\s+)?(?:async\\s+)?(?:var|let|prop|fn)\\s|for\\s+[A-Za-z_][A-Za-z0-9_]*(?:\\s*,\\s*[A-Za-z_][A-Za-z0-9_]*)?\\s+in\\s.+\\{\\s*$|if\\s+.+\\{\\s*$)((?:export\\s+)?(?:async\\s+)?(?:var|let|prop|fn|if|for))\\b",
       "end": "^(?!\\s*(?:\\?|:|&&|\\|\\||\\.(?=[A-Za-z_])))",
       "beginCaptures": {
         "1": {
@@ -331,7 +331,7 @@
       "patterns": [
         {
           "begin": "\\b(if)\\b",
-          "end": "(?=/>|>(?![ \\t]+[\\w(\"'\\[{!\\-.]))|(?=\\s+\\$?[A-Za-z_]\\w*\\s*=)|$",
+          "end": "(?=/>|>(?![ \\t]+[\\w(\"'\\[{!\\-.]))|(?=\\s+\\$?[A-Za-z_][A-Za-z0-9_]*\\s*=)|$",
           "beginCaptures": {
             "1": {
               "name": "keyword.control.mark"
@@ -344,7 +344,7 @@
           ]
         },
         {
-          "match": "\\$[A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*",
+          "match": "\\$[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*",
           "name": "variable.other.binding.mark"
         },
         {
@@ -542,7 +542,7 @@
           "include": "#keywords"
         },
         {
-          "match": "\\.([A-Za-z_]\\w*)",
+          "match": "\\.([A-Za-z_][A-Za-z0-9_]*)",
           "captures": {
             "1": {
               "name": "variable.other.property.mark"
@@ -550,7 +550,7 @@
           }
         },
         {
-          "match": "\\b([A-Za-z_]\\w*)\\s*(?=\\()",
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()",
           "captures": {
             "1": {
               "name": "entity.name.function.mark"
@@ -627,7 +627,7 @@
           "name": "punctuation.separator.mark"
         },
         {
-          "match": "\\b[A-Za-z_]\\w*\\b",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b",
           "name": "variable.other.mark"
         }
       ]

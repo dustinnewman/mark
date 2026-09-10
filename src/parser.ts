@@ -2,11 +2,19 @@ import type { Attr, Document, Expr, ForNode, IfNode, IfStmt, Node, ProseNode, Pr
 import { placeholder } from "./ast.ts";
 import { MarkError, MSG, syntax } from "./diagnostics.ts";
 import { ExprParser, RESERVED } from "./expr.ts";
-import { Scanner, isIdentChar, isIdentStart } from "./lexer.ts";
+import { IDENT, Scanner, isIdentChar, isIdentStart } from "./lexer.ts";
 
 export const VOID_ELEMENTS = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
 
-export const CODE_LINE = /^(?:(?:export\s+)?(?:async\s+)?(?:var|let|prop|fn)\s|(?:if|for)\s|\}|else\b|<[A-Za-z]|<\/[A-Za-z])/;
+// Line classification (L-2). `if` and `for` are code only in their full statement shape, ending in
+// `{`: a bare `{` cannot end a prose line (it would open an interpolation), so the brace is an
+// unambiguous discriminator and `for the record` / `if you break the line here` stay prose.
+export const DECL_LINE = /^(?:export\s+)?(?:async\s+)?(?:var|let|prop|fn)\s/;
+/** `for ident[, ident] in expr [key expr] {` — the `.+` spans the source expression and the optional `key` clause. */
+export const FOR_LINE = new RegExp(`^for\\s+${IDENT.source}(?:\\s*,\\s*${IDENT.source})?\\s+in\\s.+\\{\\s*$`);
+export const IF_LINE = /^if\s+.+\{\s*$/;
+const LINE_SHAPES = [DECL_LINE, FOR_LINE, IF_LINE, /^\}/, /^else\b/, /^<[A-Za-z]/, /^<\/[A-Za-z]/];
+export const CODE_LINE = new RegExp("^(?:" + LINE_SHAPES.map((r) => r.source.slice(1)).join("|") + ")");
 export const TAG_NAME = /^(?:[a-z][a-z0-9-]*|[A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)*)/;
 export const ATTR_NAME = /^[A-Za-z_:][A-Za-z0-9_:.-]*/;
 
@@ -95,7 +103,8 @@ class DocParser {
     // Comments (L-11).
     if (stripped.startsWith("//")) { sc.consumeLine(); return; }
 
-    // L-3: escaped keyword line is prose.
+    // L-3: a `\` before a line L-2 would classify as code makes it prose. Any other leading `\` is
+    // ordinary prose text, so `\for the record` keeps its backslash now that `for the record` is prose.
     if (stripped.startsWith("\\") && CODE_LINE.test(stripped.slice(1))) {
       const indent = raw.length - stripped.length;
       sc.pos += indent + 1;

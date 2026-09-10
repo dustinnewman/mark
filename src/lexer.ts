@@ -23,6 +23,8 @@ const CONTINUATION = new RegExp("^(?:\\n[ \\t]*)+(" + CONTINUATION_START.source 
 
 export const isIdentStart = (c: string): boolean => /[A-Za-z_]/.test(c);
 export const isIdentChar = (c: string): boolean => /[A-Za-z0-9_]/.test(c);
+/** An identifier (§3.2); also used by the line classifier's `for` shape (L-2). */
+export const IDENT = /[A-Za-z_][A-Za-z0-9_]*/;
 
 /**
  * Character-level scanner over a whole source string. The document parser

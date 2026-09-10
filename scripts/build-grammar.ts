@@ -4,14 +4,14 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { RESERVED, GT_CONTINUES } from "../src/expr.ts";
-import { CONTINUATION_START } from "../src/lexer.ts";
-import { ATTR_NAME, CODE_LINE, TAG_NAME } from "../src/parser.ts";
+import { CONTINUATION_START, IDENT as IDENT_RE } from "../src/lexer.ts";
+import { ATTR_NAME, CODE_LINE, DECL_LINE, FOR_LINE, IF_LINE, TAG_NAME } from "../src/parser.ts";
 
 type Rule = Record<string, unknown>;
 
 /** JS regex source → Oniguruma. The parser's regexes are all in the common subset; drop the `^`. */
 const src = (re: RegExp): string => re.source.replace(/^\^/, "");
-const IDENT = "[A-Za-z_]\\w*";
+const IDENT = IDENT_RE.source;
 const words = (ws: string[]): string => `\\b(?:${ws.join("|")})\\b`;
 
 const KEYWORDS: Record<string, string[]> = {
@@ -68,9 +68,10 @@ const repository: Record<string, Rule> = {
   "stmt-block": { begin: "^\\s*(if|for)\\b", end: "^\\s*(\\})", beginCaptures: { 1: { name: "keyword.control.mark" } }, endCaptures: { 1: punct("section.block.end") }, patterns: [include("statements")] },
   "else-block": { begin: "\\b(else)\\b", end: "^\\s*(\\})", beginCaptures: { 1: { name: "keyword.control.mark" } }, endCaptures: { 1: punct("section.block.end") }, patterns: [include("statements")] },
   // Any other code line: declarations and block openers run to the end of the line (plus continuation
-  // lines); the body lines of a top-level `if`/`for` are classified again on their own.
+  // lines); the body lines of a top-level `if`/`for` are classified again on their own. The lookahead is
+  // the parser's L-2 test, so `if`/`for` only highlight in their full brace-terminated shape.
   "decl-line": {
-    begin: "^\\s*((?:export\\s+)?(?:async\\s+)?(?:var|let|prop|fn|if|for))\\b", end: EOL_UNLESS_CONTINUED,
+    begin: `^\\s*(?=${src(DECL_LINE)}|${src(FOR_LINE)}|${src(IF_LINE)})((?:export\\s+)?(?:async\\s+)?(?:var|let|prop|fn|if|for))\\b`, end: EOL_UNLESS_CONTINUED,
     beginCaptures: { 1: { patterns: [include("keywords")] } }, patterns: [include("block-open"), include("expression")],
   },
   closer: { begin: "^\\s*(\\})", end: EOL_UNLESS_CONTINUED, beginCaptures: { 1: punct("section.block.end") }, patterns: [include("block-open"), include("expression")] },

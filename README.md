@@ -3,7 +3,8 @@
 A Markdown-flavored language for interactive websites, implemented from `spec.md`.
 
 One file type (`.mark`) describes pages, layouts and components. Lines are prose unless they
-start with a keyword (`var`, `let`, `prop`, `fn`, `if`, `for`, `}`) or a tag. `var` is a signal,
+start with a declaration keyword (`var`, `let`, `prop`, `fn`), a full block opener ending in `{`
+(`for p in pages {`, `if x {`), a `}` or a tag; `for the record` is prose. `var` is a signal,
 `let` is a computed. `mark build` evaluates every page at build time and writes plain HTML;
 JavaScript is emitted only for *islands*, the subtrees that can change after load.
 

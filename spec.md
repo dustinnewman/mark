@@ -116,12 +116,14 @@ Processing is line-oriented. The parser reads a document line by line and classi
 **L-1** Leading whitespace is stripped for classification (but preserved for Markdown list nesting in prose).
 **L-2** A line is a **code line** if, after stripping, it matches one of:
   - `^(var|let|prop|fn)\s`  — declaration
-  - `^(if|for)\s` — block opener
+  - `^for\s+ident(\s*,\s*ident)?\s+in\s.+\{\s*$` — `for` block opener
+  - `^if\s+.+\{\s*$` — `if` block opener
   - `^\}` — block closer (optionally followed by `else` clause)
   - `^else\b` — else clause (only valid immediately after `}` on the same line; see L-6)
   - `^<[A-Za-z]` — tag start
   - `^</[A-Za-z]` — closing tag
-**L-3** A line starting with `\` followed by any of the above is prose; the `\` is removed. Example: `\for the record…` is the prose "for the record…".
+  `if` and `for` are keywords, but the keyword alone does not make a line code: a line beginning with `for` or `if` that does not match the full shape above (including the trailing `{`) is prose. `for the record we`, `if you break the line here` and `for anyone in the room` are prose; `for p in pages {`, `for p, i in pages key p.path {` and `if x {` are block openers.
+**L-3** A line starting with `\` followed by any of the above is prose; the `\` is removed. Example: `\if you see this, stop \{` is the prose "if you see this, stop {". The escape applies only to lines that match an L-2 shape in full; before anything else a leading `\` is ordinary prose text (`\for the record` renders with its backslash, and `for the record` needs no escape).
 **L-4** Inside a fenced code block (``` or ~~~), all lines are literal prose until the closing fence. Fences are detected before L-2.
 **L-5** Inside a display math block (`$$` on its own line … `$$`), all lines are literal.
 **L-6** `} else {` and `} else if cond {` must be on one line. A `}` alone closes; `else` on its own line is a syntax error.
@@ -159,6 +161,7 @@ stmt        := "let" ident "=" expr EOL     (* immutable local *)
              | "var" ident [ "=" expr ] EOL (* mutable local, NOT reactive *)
              | "if" expr "{" EOL { stmt } "}" [ stmtElse ] EOL
              | "for" ident [ "," ident ] "in" expr "{" EOL { stmt } "}" EOL
+                                            (* no `key` clause in statement form; `{` still ends the line *)
              | "return" [ expr ] EOL
              | expr EOL
 stmtElse    := "else" "if" expr "{" EOL { stmt } "}" [ stmtElse ] | "else" "{" EOL { stmt } "}"
@@ -169,7 +172,7 @@ ifBlock     := "if" expr "{" EOL { item } "}" [ elseTail ] EOL
 elseTail    := "else" "if" expr "{" EOL { item } "}" [ elseTail ]
              | "else" "{" EOL { item } "}"
 forBlock    := "for" ident [ "," ident ] "in" expr [ "key" expr ] "{" EOL { item } "}" EOL
-             (* second ident is the index *)
+             (* second ident is the index; `key expr` sits between the source expression and `{` *)
 
 tagBlock    := openTag EOL { item } closeTag EOL
              | selfTag EOL
@@ -754,12 +757,12 @@ ast: [
 ]
 ```
 
-**parse-02 · keyword line is code, escaped keyword is prose**
+**parse-02 · keyword line is code, escaped code-shaped line is prose**
 ```
-src: "var x = 1\n\\for the record\n"
+src: "var x = 1\n\\if you see this, stop \\{\n"
 ast: [
   {"t":"var","name":"x","init":{"type":"Literal","value":1},"line":1},
-  {"t":"prose","md":"for the record\n","parts":[],"line":2}
+  {"t":"prose","md":"if you see this, stop {\n","parts":[],"line":2}
 ]
 ```
 
@@ -1218,7 +1221,7 @@ Do not begin in Rust while the syntax is moving.
 
 ### 16.3 Pitfalls the tests are designed to catch
 
-- Treating `for the record` as a loop (L-3).
+- Treating `for the record` as a loop, or stripping the `\` from `\for the record` (L-2/L-3).
 - Re-running a whole `for` body when one item's field changes (R-4, run-04).
 - Losing loop-body state on reorder (C-12, run-05).
 - Forgetting to call `onXChange` on a bound prop write, or letting the parent's echo trigger a second write (T-17, run-06/07).
@@ -1231,6 +1234,10 @@ Do not begin in Rust while the syntax is moving.
 - Evaluator and runtime disagreeing on number formatting or sort order (V-3, eval-05/11, build-08).
 - Marking a whole page dynamic because a layout reads `Page.path` in non-SPA mode (P-4, eval-13, build-01).
 - Shipping the runtime on a page with no islands (I-5, build-01).
+
+### 16.4 Why L-2 anchors block openers on the brace
+
+Earlier drafts classified any line starting with `if ` or `for ` as code, so ordinary prose such as `for the record` needed a `\` escape and a wrapped paragraph starting with `if` silently became a block header. The trailing `{` resolves this without giving up the keywords: `{` opens an interpolation in prose, so a prose line *ending* in a bare `{` is already invalid, which makes the brace an unambiguous discriminator. Requiring the full shape (`for ident in … {`, `if … {`) costs nothing for real code, since a block opener must end in `{` anyway, and the shapes `for ident in` / `if expr {` essentially never occur as wrapped prose. `\for` / `\if` (L-3) remain for the rare prose line that does match, and only for those: L-3 tests the same shapes as L-2, so there is one definition of "code line".
 
 ## 17. Open Questions (deferred past 0.1)
 

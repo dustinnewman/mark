@@ -5,11 +5,11 @@
     "ast": [{ "t": "prose", "md": "# Hello\n\nSome *text*.\n", "parts": [], "line": 1 }]
   },
   {
-    "name": "parse-02 keyword line is code, escaped keyword is prose",
-    "src": "var x = 1\n\\for the record\n",
+    "name": "parse-02 keyword line is code, escaped code-shaped line is prose",
+    "src": "var x = 1\n\\if you see this, stop \\{\n",
     "ast": [
       { "t": "var", "name": "x", "init": { "type": "Literal", "value": 1 }, "line": 1 },
-      { "t": "prose", "md": "for the record\n", "parts": [], "line": 2 }
+      { "t": "prose", "md": "if you see this, stop {\n", "parts": [], "line": 2 }
     ]
   },
   {
@@ -533,5 +533,49 @@
     "name": "parse-24 unclosed block",
     "src": "if a {\nA\n",
     "error": "SYNTAX"
+  },
+  {
+    "name": "parse-25 keyword without the full L-2 shape is prose, and a `\\` before it stays",
+    "src": "for the record we\nif you break the line here\nfor anyone in the room\nif x\nfor p in pages\n\\for the record\n",
+    "ast": [
+      { "t": "prose", "md": "for the record we\nif you break the line here\nfor anyone in the room\nif x\nfor p in pages\n\\for the record\n", "parts": [], "line": 1 }
+    ]
+  },
+  {
+    "name": "parse-26 full block-opener shapes classify as blocks",
+    "src": "for p in pages {\nA\n}\nfor p, i in pages key p.path {\nB\n}\nif x {\nC\n}\n",
+    "ast": [
+      {
+        "t": "for", "item": "p", "src": { "type": "Identifier", "name": "pages" },
+        "body": [{ "t": "prose", "md": "A\n", "parts": [], "line": 2 }], "line": 1
+      },
+      {
+        "t": "for", "item": "p", "index": "i", "src": { "type": "Identifier", "name": "pages" },
+        "key": { "type": "MemberExpression", "object": { "type": "Identifier", "name": "p" }, "property": { "type": "Identifier", "name": "path" }, "computed": false },
+        "body": [{ "t": "prose", "md": "B\n", "parts": [], "line": 5 }], "line": 4
+      },
+      {
+        "t": "if", "cond": { "type": "Identifier", "name": "x" },
+        "then": [{ "t": "prose", "md": "C\n", "parts": [], "line": 8 }], "line": 7
+      }
+    ]
+  },
+  {
+    "name": "parse-27 escaped full-shape line is prose; else clauses still classify via `}`",
+    "src": "if x {\nA\n} else if y {\nB\n} else {\nC\n}\n\\if you see this, stop \\{\n",
+    "ast": [
+      {
+        "t": "if", "cond": { "type": "Identifier", "name": "x" },
+        "then": [{ "t": "prose", "md": "A\n", "parts": [], "line": 2 }],
+        "else": {
+          "t": "if", "cond": { "type": "Identifier", "name": "y" },
+          "then": [{ "t": "prose", "md": "B\n", "parts": [], "line": 4 }],
+          "else": [{ "t": "prose", "md": "C\n", "parts": [], "line": 6 }],
+          "line": 3
+        },
+        "line": 1
+      },
+      { "t": "prose", "md": "if you see this, stop {\n", "parts": [], "line": 8 }
+    ]
   }
 ]
